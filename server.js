@@ -36,35 +36,27 @@ app.use(function (req, res, next) {
         next();
       }
     });
-  });
+});
 
 // request handlers
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
     if (!req.user) return res.status(401).json({ success: false, message: 'Invalid user to access it.' });
     res.send('Welcome to the Node.js Tutorial! - ' + req.user.name);
-  });
+});
 
 // validate the user credentials
-app.post('/users/signin', function (req, res) {
+app.post('/api/users/signin', (req, res) => {
     const userData = req.body;
-    const user = db.validateSignin(userData);
-   
-    // return 400 status if username/password is not exist
-    // if (!user || !pwd) {
-    //   return res.status(400).json({
-    //     error: true,
-    //     message: "Username or Password required."
-    //   });
-    // }
-   
+    db.validateSignin(userData, user => {
+    
     // return 401 status if the credential is not match.
-    if (user.length === 0) {
+    if (user === undefined || user.length === 0) {
       return res.status(401).json({
         error: true,
         message: "Username or Password is Wrong."
       });
     }
-   
+    
     // generate token
     const token = utils.generateToken(user[0]);
     // get basic user details
@@ -72,9 +64,29 @@ app.post('/users/signin', function (req, res) {
     // return the token along with user details
     return res.json({ user: userObj, token });
   });
+});
+
+// create new user account
+app.post('/api/users/signup', (req, res) => {
+    const userData = req.body;
+    db.userSignup(userData, user => {
+      // generate token
+      const token = utils.generateToken(user[0]);
+      // get basic user details
+      const userObj = utils.getCleanUser(user[0]);
+      // return the token along with user details
+      return res.json({ user: userObj, token });
+    }, () => {
+      return res.status(401).json({
+        error: true,
+        message: "Username already exists."
+      });
+    });
+});
+
 
 // verify the token and return it if it's valid
-app.get('/verifyToken', function (req, res) {
+app.get('/api/verifyToken', function (req, res) {
     // check header or url parameters or post parameters for token
     var token = req.body.token || req.query.token;
     if (!token) {
@@ -91,14 +103,15 @@ app.get('/verifyToken', function (req, res) {
       });
    
       // return 401 status if the userId does not match.
-      if (user.userId !== userData.userId) {
-        return res.status(401).json({
-          error: true,
-          message: "Invalid user."
-        });
-      }
+      // if (user.user_id !== userData.userId) {
+      //   return res.status(401).json({
+      //     error: true,
+      //     message: "Invalid user."
+      //   });
+      // }
+      
       // get basic user details
-      var userObj = utils.getCleanUser(userData);
+      var userObj = utils.getCleanUser(user);
       return res.json({ user: userObj, token });
     });
 });
