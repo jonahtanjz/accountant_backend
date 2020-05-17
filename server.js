@@ -49,21 +49,26 @@ app.post('/api/users/signin', (req, res) => {
     const userData = req.body;
     db.validateSignin(userData, user => {
     
-    // return 401 status if the credential is not match.
-    if (user === undefined || user.length === 0) {
+      // return 401 status if the credential is not match.
+      if (user === undefined || user.length === 0) {
+        return res.status(401).json({
+          error: true,
+          message: "Username or Password is Wrong."
+        });
+      }
+      
+      // generate token
+      const token = utils.generateToken(user[0]);
+      // get basic user details
+      const userObj = utils.getCleanUser(user[0]);
+      // return the token along with user details
+      return res.json({ user: userObj, token });
+    }, () => {
       return res.status(401).json({
         error: true,
-        message: "Username or Password is Wrong."
-      });
-    }
-    
-    // generate token
-    const token = utils.generateToken(user[0]);
-    // get basic user details
-    const userObj = utils.getCleanUser(user[0]);
-    // return the token along with user details
-    return res.json({ user: userObj, token });
-  });
+        message: "Oops! Something went wrong. Please try again."
+      });  
+    });
 });
 
 // create new user account
@@ -80,6 +85,11 @@ app.post('/api/users/signup', (req, res) => {
       return res.status(401).json({
         error: true,
         message: "Username already exists."
+      });
+    }, () => {
+      return res.status(401).json({
+        error: true,
+        message: "Oops! Something went wrong. Please try again."
       });
     });
 });
