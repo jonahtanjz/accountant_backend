@@ -94,6 +94,19 @@ app.post('/api/users/signup', (req, res) => {
     });
 });
 
+// create new trip
+app.post('/api/newtrip', (req, res) => {
+    const tripData = req.body;
+    db.addTrip(tripData, tripID => {
+      return res.json({ trip_id: tripID });
+    });
+}, () => {
+  return res.status(401).json({
+    error: true,
+    message: "Oops! Something went wrong. Please try again."
+  });
+});
+
 
 // verify the token and return it if it's valid
 app.get('/api/verifyToken', function (req, res) {
