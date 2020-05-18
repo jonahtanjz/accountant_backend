@@ -54,9 +54,10 @@ function addTrip(tripData, callback, error) {
             console.error('error query: ' + err.stack);
             return error();
         }
-        addUsers(tripData.users, result.insertId, () => true, () => false);
-        addCurrency(tripData.currency, result.insertId, () => true, () => false);
-        return callback(result.insertId);
+
+        return addUsers(tripData.users, result.insertId, () => { 
+                addCurrency(tripData.currency, result.insertId, () => callback(result.insertId), error);
+            }, error);
     });
 }
 
@@ -70,6 +71,7 @@ function addUsers(users, trip_id, callback, error) {
         pool.query("SELECT user_id FROM users WHERE username = ?", [users[i]], function (err, result) {
             if (err) {
                 console.error('error query: ' + err.stack);
+                return error();
             }
             if (result.length === 0) {
                 userData.push(null);
@@ -106,7 +108,7 @@ function addCurrency(currency, trip_id, callback, error) {
     }
     pool.query(sqlQuery, currencyData, function (err, result) {
         if (err) {
-        console.error('error query: ' + err.stack);
+            console.error('error query: ' + err.stack);
             return error();
         }
         return callback();
