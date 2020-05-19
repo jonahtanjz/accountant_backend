@@ -80,7 +80,7 @@ function addUsers(users, trip_id, callback, error) {
             } else {
                 userData.push(result[0].user_id);
                 userData.push(trip_id);
-                userData.push(null);
+                userData.push(users[i]);
             }
 
             if (i === users.length - 1) {
@@ -96,6 +96,7 @@ function addUsers(users, trip_id, callback, error) {
     }
 }
 
+// Add currency to trip
 function addCurrency(currency, trip_id, callback, error) {
     let sqlTemplate = "INSERT INTO currency (trip_id, name, value) VALUES (?, ?, ?);";
     let sqlQuery = "";
@@ -115,9 +116,122 @@ function addCurrency(currency, trip_id, callback, error) {
     });
 }
 
+// Get all trips from a user
+function getTrips(userId, callback, error) {
+    let sqlQuery = "SELECT trip_id FROM user_trips WHERE user_id = ?";
+    pool.query(sqlQuery, [userId], function (err, result) {
+        if (err) {
+            console.error('error query: ' + err.stack);
+            return error();
+        }
+        let sqlTemplate = "SELECT * FROM trips where trip_id = ?;";
+        let sqlQuery = "";
+        let tripIds = [];
+        for (let i = 0; i < result.length; i++) {
+            sqlQuery = sqlQuery + sqlTemplate;
+            tripIds.push(result[i].trip_id);
+        }
+        pool.query(sqlQuery, tripIds, function (err, results) {
+            if (err) {
+                console.error('error query: ' + err.stack);
+                return error();
+            }
+            return callback(results);
+        }); 
+    });
+} 
+
+// get individual trip info
+function getTripInfo(tripId, callback, error) {
+    let sqlQuery = "SELECT * FROM trips WHERE trip_id = ?;"
+            + "SELECT name FROM user_trips WHERE trip_id = ?;" 
+            + "SELECT name, value FROM currency WHERE trip_id = ?;";
+
+    pool.query(sqlQuery, [tripId, tripId, tripId], function (err, results) {
+        if (err) {
+            console.error('error query: ' + err.stack);
+            return error();
+        }
+
+        if (results[0].length === 0 || results[1].length === 0 || results[2].length === 0) {
+            return error();
+        }
+        return callback(results);
+    });
+}
+
+// add new transaction
+function addTransaction(transactionData, callback, error) {
+    let sqlTemplate = "INSERT INTO transactions (payer, payee, amount, description, currency, trip_id) "
+            + "VALUES (?, ?, ?, ?, ?, ?);"
+    let sqlQuery = "";
+    let transactionQueryData = [];
+    let payees = transactionData.payees;
+    let payers = transactionData.payers;
+    let payersCount = 0;
+    let totalAmount = 0;
+    let totalRatio = 0;
+
+    for (let i = 0; i < payees.length; i++) {
+        totalAmount = totalAmount + payees[i][1];
+    }
+
+    for (let i = 0; i < payers.length; i++) {
+        totalRatio = totalRatio + payers[i][1];
+    }
+
+    payers = payers.map(payer => {
+        let amount = (payer[1] / totalRatio) * totalAmount;
+        return [payer[0], amount];
+    });
+
+    for (let i = 0; i < payees.length; i++) {
+        while (payees[i][1] !== 0) {
+            if (payers[payersCount][1] > payees[i][1]) {
+                if (payees[i][0] !== payers[payersCount][0]) {
+                    sqlQuery = sqlQuery + sqlTemplate;
+                    transactionQueryData.push(payers[payersCount][0]);
+                    transactionQueryData.push(payees[i][0]);
+                    transactionQueryData.push(payees[i][1]);
+                    transactionQueryData.push(transactionData.description);
+                    transactionQueryData.push(transactionData.currency);
+                    transactionQueryData.push(transactionData.trip_id);
+                }
+                payers[payersCount][1] = payers[payersCount][1] - payees[i][1];
+                payees[i][1] = 0;
+            } else {
+                if (payees[i][0] !== payers[payersCount][0]) {
+                    sqlQuery = sqlQuery + sqlTemplate;
+                    transactionQueryData.push(payers[payersCount][0]);
+                    transactionQueryData.push(payees[i][0]);
+                    transactionQueryData.push(payers[payersCount][1]);
+                    transactionQueryData.push(transactionData.description);
+                    transactionQueryData.push(transactionData.currency);
+                    transactionQueryData.push(transactionData.trip_id);
+                }
+                payees[i][1] = payees[i][1] - payers[payersCount][1];
+                payersCount++;
+            }
+        }
+    }
+
+    pool.query(sqlQuery, transactionQueryData, function (err, result) {
+        if (err) {
+            console.error('error query: ' + err.stack);
+            return error();
+        }
+        callback();
+    });
+}
+
 
 module.exports = {
     validateSignin,
     userSignup,
-    addTrip
+    addTrip,
+    addUsers, 
+    addCurrency,
+    getTrips,
+    getTripInfo,
+    addTransaction
 }

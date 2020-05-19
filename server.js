@@ -99,14 +99,52 @@ app.post('/api/newtrip', (req, res) => {
     const tripData = req.body;
     db.addTrip(tripData, tripID => {
       return res.json({ trip_id: tripID });
+    }, () => {
+      return res.status(401).json({
+        error: true,
+        message: "Oops! Something went wrong. Please try again."
+      });
     });
-}, () => {
-  return res.status(401).json({
-    error: true,
-    message: "Oops! Something went wrong. Please try again."
-  });
 });
 
+// get all the trips of a user
+app.get('/api/gettrips', function (req, res) {
+    const userId = req.query.userid;
+    db.getTrips(userId, tripsData => {
+      return res.json({ trips: tripsData });
+    }, () => {
+      return res.status(401).json({
+        error: true,
+        message: "Oops! Something went wrong. Please try again."
+      });
+    });
+});
+
+// get individual trip info
+app.get('/api/gettripinfo', function (req, res) {
+    const tripId = req.query.tripid;
+    db.getTripInfo(tripId, tripData => {
+      return res.json({trip: tripData[0], users: tripData[1], currency: tripData[2]});
+    }, () => {
+      return res.status(401).json({
+        error: true,
+        message: "Oops! Something went wrong. Please try again."
+      });
+    });
+});
+
+// add new transaction
+app.post('/api/addtransaction', function (req, res) {
+    const transactionData = req.body;
+    db.addTransaction(transactionData, () => {
+      return res.json({message: "Success"});
+    }, () => {
+      return res.status(401).json({
+        error: true,
+        message: "Oops! Something went wrong. Please try again."
+      });
+    });
+});
 
 // verify the token and return it if it's valid
 app.get('/api/verifyToken', function (req, res) {
