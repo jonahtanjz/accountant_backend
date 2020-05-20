@@ -9,6 +9,13 @@ const db = require('./db.js');
  
 const app = express();
 const port = process.env.PORT || 4000;
+
+const errorMessage = res => {
+  return res.status(401).json({
+    error: true,
+    message: "Oops! Something went wrong. Please try again."
+  });
+};
  
 // enable CORS
 app.use(cors());
@@ -41,7 +48,7 @@ app.use(function (req, res, next) {
 // request handlers
 app.get('/api', (req, res) => {
     if (!req.user) return res.status(401).json({ success: false, message: 'Invalid user to access it.' });
-    res.send('Welcome to the Node.js Tutorial! - ' + req.user.name);
+    res.send('The Accountant Backend API - ' + req.user.name);
 });
 
 // validate the user credentials
@@ -63,12 +70,7 @@ app.post('/api/users/signin', (req, res) => {
       const userObj = utils.getCleanUser(user[0]);
       // return the token along with user details
       return res.json({ user: userObj, token });
-    }, () => {
-      return res.status(401).json({
-        error: true,
-        message: "Oops! Something went wrong. Please try again."
-      });  
-    });
+    }, () => errorMessage(res));
 });
 
 // create new user account
@@ -86,12 +88,7 @@ app.post('/api/users/signup', (req, res) => {
         error: true,
         message: "Username already exists."
       });
-    }, () => {
-      return res.status(401).json({
-        error: true,
-        message: "Oops! Something went wrong. Please try again."
-      });
-    });
+    }, () => errorMessage(res));
 });
 
 // create new trip
@@ -99,38 +96,31 @@ app.post('/api/newtrip', (req, res) => {
     const tripData = req.body;
     db.addTrip(tripData, tripID => {
       return res.json({ trip_id: tripID });
-    }, () => {
-      return res.status(401).json({
-        error: true,
-        message: "Oops! Something went wrong. Please try again."
-      });
-    });
+    }, () => errorMessage(res));
 });
 
 // get all the trips of a user
 app.get('/api/gettrips', function (req, res) {
     const userId = req.query.userid;
-    db.getTrips(userId, tripsData => {
-      return res.json({ trips: tripsData });
-    }, () => {
-      return res.status(401).json({
-        error: true,
-        message: "Oops! Something went wrong. Please try again."
-      });
-    });
+    if (userId) {
+      db.getTrips(userId, tripsData => {
+        return res.json({ trips: tripsData });
+      }, () => errorMessage(res));
+    } else {
+      errorMessage(res);
+    }
 });
 
 // get individual trip info
 app.get('/api/gettripinfo', function (req, res) {
     const tripId = req.query.tripid;
-    db.getTripInfo(tripId, tripData => {
-      return res.json({trip: tripData[0], users: tripData[1], currency: tripData[2]});
-    }, () => {
-      return res.status(401).json({
-        error: true,
-        message: "Oops! Something went wrong. Please try again."
-      });
-    });
+    if (tripId) {
+      db.getTripInfo(tripId, tripData => {
+        return res.json({trip: tripData[0], users: tripData[1], currency: tripData[2]});
+      }, () => errorMessage(res));
+    } else {
+      errorMessage(res);
+    }
 });
 
 // add new transaction
@@ -138,24 +128,18 @@ app.post('/api/addtransaction', function (req, res) {
     const transactionData = req.body;
     db.addTransaction(transactionData, () => {
       return res.json({message: "Success"});
-    }, () => {
-      return res.status(401).json({
-        error: true,
-        message: "Oops! Something went wrong. Please try again."
-      });
-    });
+    }, () => errorMessage(res));
 });
 
 app.get('/api/getledger', function (req, res) {
     const tripId = req.query.tripid;
-    db.getLedger(tripId, tripData => {
-      return res.json({ trip: tripData[0], users: tripData[1], transactions: tripData[2], currency: tripData[3] });
-    }, () => {
-      return res.status(401).json({
-        error: true,
-        message: "Oops! Something went wrong. Please try again."
-      });
-    });
+    if (tripId) {
+      db.getLedger(tripId, tripData => {
+        return res.json({ trip: tripData[0], users: tripData[1], transactions: tripData[2], currency: tripData[3] });
+      }, () => errorMessage(res));
+    } else {
+      errorMessage(res);
+    }
 });
 
 // verify the token and return it if it's valid

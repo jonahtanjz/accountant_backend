@@ -124,20 +124,24 @@ function getTrips(userId, callback, error) {
             console.error('error query: ' + err.stack);
             return error();
         }
-        let sqlTemplate = "SELECT * FROM trips where trip_id = ?;";
-        let sqlQuery = "";
-        let tripIds = [];
-        for (let i = 0; i < result.length; i++) {
-            sqlQuery = sqlQuery + sqlTemplate;
-            tripIds.push(result[i].trip_id);
-        }
-        pool.query(sqlQuery, tripIds, function (err, results) {
-            if (err) {
-                console.error('error query: ' + err.stack);
-                return error();
+        if (result.length !== 0) { 
+            let sqlTemplate = "SELECT * FROM trips where trip_id = ?;";
+            let sqlQuery = "";
+            let tripIds = [];
+            for (let i = 0; i < result.length; i++) {
+                sqlQuery = sqlQuery + sqlTemplate;
+                tripIds.push(result[i].trip_id);
             }
-            return callback(results);
-        }); 
+            pool.query(sqlQuery, tripIds, function (err, results) {
+                if (err) {
+                    console.error('error query: ' + err.stack);
+                    return error();
+                }
+                return callback(results);
+            }); 
+        } else {
+            return error();
+        }
     });
 } 
 
@@ -233,12 +237,12 @@ function getLedger(tripId, callback, error) {
     pool.query(sqlQuery, [tripId, tripId, tripId, tripId], function (err, results) {
         if (err) {
             console.error(err);
-            error();
+            return error();
         }
         if (results[0].length === 0 || results[1].length === 0 || results[2].length === 0 || results[3].length === 0) {
             return error();
         }
-        callback(results);
+        return callback(results);
     });
 }
 
