@@ -224,6 +224,23 @@ function addTransaction(transactionData, callback, error) {
     });
 }
 
+function getLedger(tripId, callback, error) {
+    let sqlQuery = "SELECT * FROM trips WHERE trip_id = ?;"
+            + "SELECT name FROM user_trips WHERE trip_id = ?;"
+            + "SELECT * FROM transactions WHERE trip_id = ?;" 
+            + "SELECT name, value FROM currency WHERE trip_id = ?;";
+    
+    pool.query(sqlQuery, [tripId, tripId, tripId, tripId], function (err, results) {
+        if (err) {
+            console.error(err);
+            error();
+        }
+        if (results[0].length === 0 || results[1].length === 0 || results[2].length === 0 || results[3].length === 0) {
+            return error();
+        }
+        callback(results);
+    });
+}
 
 module.exports = {
     validateSignin,
@@ -233,5 +250,6 @@ module.exports = {
     addCurrency,
     getTrips,
     getTripInfo,
-    addTransaction
+    addTransaction,
+    getLedger
 }

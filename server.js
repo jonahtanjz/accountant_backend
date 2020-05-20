@@ -146,6 +146,18 @@ app.post('/api/addtransaction', function (req, res) {
     });
 });
 
+app.get('/api/getledger', function (req, res) {
+    const tripId = req.query.tripid;
+    db.getLedger(tripId, tripData => {
+      return res.json({ trip: tripData[0], users: tripData[1], transactions: tripData[2], currency: tripData[3] });
+    }, () => {
+      return res.status(401).json({
+        error: true,
+        message: "Oops! Something went wrong. Please try again."
+      });
+    });
+});
+
 // verify the token and return it if it's valid
 app.get('/api/verifyToken', function (req, res) {
     // check header or url parameters or post parameters for token
