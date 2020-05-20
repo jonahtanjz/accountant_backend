@@ -131,6 +131,7 @@ app.post('/api/addtransaction', function (req, res) {
     }, () => errorMessage(res));
 });
 
+// get all transactions from trip
 app.get('/api/getledger', function (req, res) {
     const tripId = req.query.tripid;
     if (tripId) {

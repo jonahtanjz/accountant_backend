@@ -1,4 +1,5 @@
 var mysql = require('mysql');
+
 var pool = mysql.createPool({
     connectionLimit : 100,
     host     : '127.0.0.1',
@@ -228,6 +229,7 @@ function addTransaction(transactionData, callback, error) {
     });
 }
 
+// get transactions from a trip
 function getLedger(tripId, callback, error) {
     let sqlQuery = "SELECT * FROM trips WHERE trip_id = ?;"
             + "SELECT name FROM user_trips WHERE trip_id = ?;"
