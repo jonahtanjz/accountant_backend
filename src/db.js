@@ -9,7 +9,6 @@ var pool = mysql.createPool({
     multipleStatements: true
 });
 
-
 // For login
 function validateSignin(userData, callback, error) {
     let sqlQuery = "SELECT * FROM users WHERE username = ? AND password = ?";
