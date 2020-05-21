@@ -143,6 +143,20 @@ app.get('/api/getledger', function (req, res) {
     }
 });
 
+app.post('/api/edittrip', function (req, res) {
+    const tripData = req.body;
+    db.editTrip(tripData, () => {
+      return res.json({ message: "Success" });
+    }, () => errorMessage(res));
+});
+
+app.post('/api/edittripuser', function (req, res) {
+  const userData = req.body;
+  db.editTrip(userData, () => {
+    return res.json({ message: "Success" });
+  }, () => errorMessage(res));
+});
+
 // verify the token and return it if it's valid
 app.get('/api/verifyToken', function (req, res) {
     // check header or url parameters or post parameters for token
