@@ -96,6 +96,29 @@ function addUsers(users, trip_id, callback, error) {
     }
 }
 
+// add one user to the trip
+function addUser(userData, callback, error) {
+    let sqlQuery = "SELECT id FROM user_trips WHERE trip_id = ? AND name = ?";
+    pool.query(sqlQuery, [userData.trip_id, userData.username], function (err, result) {
+        if (err) {
+            console.error('error query: ' + err.stack);
+            return error();
+        }
+        if (result.length === 0) {
+            return addUsers([userData.username], userData.trip_id, callback, error);
+        } else {
+            let sqlQuery = "UPDATE user_trips SET in_trip = 1 WHERE id = ?";
+            pool.query(sqlQuery, [result[0].id], function (err, result) {
+                if (err) {
+                    console.error('error query: ' + err.stack);
+                    return error();
+                }
+                return callback();
+            });
+        }
+    });
+}
+
 // Add currency to trip
 function addCurrency(currency, trip_id, callback, error) {
     let sqlTemplate = "INSERT INTO currency (trip_id, name, value) VALUES (?, ?, ?);";
@@ -148,7 +171,7 @@ function getTrips(userId, callback, error) {
 // get individual trip info
 function getTripInfo(tripId, callback, error) {
     let sqlQuery = "SELECT * FROM trips WHERE trip_id = ?;"
-            + "SELECT name, in_trip FROM user_trips WHERE trip_id = ?;" 
+            + "SELECT id, name, in_trip FROM user_trips WHERE trip_id = ?;" 
             + "SELECT name, value FROM currency WHERE trip_id = ?;";
 
     pool.query(sqlQuery, [tripId, tripId, tripId], function (err, results) {
@@ -250,7 +273,7 @@ function getLedger(tripId, callback, error) {
 // edit trip data
 function editTrip(tripData, callback, error) {
     let sqlQuery = "UPDATE trips SET trip_name = ? WHERE trip_id = ?";
-    pool.query(sqlQuery, [tripData.tripName, tripData,trip_id], function (err, result) {
+    pool.query(sqlQuery, [tripData.tripName, tripData.trip_id], function (err, result) {
         if (err) {
             console.error('error query: ' + err.stack);
             error();
@@ -259,33 +282,37 @@ function editTrip(tripData, callback, error) {
     });
 }
 
+// edit user's name in a trip
 function editTripUser(userData, callback, error) {
-    let sqlQuery = "UPDATE user_trips SET user_id = ?, name = ? WHERE id = ?;"
-            + "UPDATE transactions " 
-            + "SET payee = CASE payee WHEN ? THEN ? ELSE payee END, "
-            + "payer = CASE payer WHEN ? THEN ? ELSE payer END "
-            + "WHERE ? IN (payee, payer);";
-    let userQueryData = [];
-
-    pool.query("SELECT user_id FROM users WHERE username = ?", [userData.newUsername], function (err, result) {
+    let sqlQuery = "SELECT name from user_trips WHERE id = ?;" 
+            + "SELECT user_id FROM users WHERE username = ?;";
+    pool.query(sqlQuery, [userData.id, userData.newUsername], function (err, results) {
         if (err) {
             console.error('error query: ' + err.stack);
             return error();
         }
 
-        if (result.length === 0) {
+        let sqlQuery = "UPDATE user_trips SET user_id = ?, name = ? WHERE id = ?;"
+                + "UPDATE transactions " 
+                + "SET payee = CASE payee WHEN ? THEN ? ELSE payee END, "
+                + "payer = CASE payer WHEN ? THEN ? ELSE payer END "
+                + "WHERE (? IN (payee, payer)) AND trip_id = ?;";
+        let userQueryData = [];
+
+        if (results[1].length === 0) {
             userQueryData.push(null);
             userQueryData.push(userData.newUsername);
         } else {
-            userQueryData.push(result[0].user_id);
+            userQueryData.push(results[1][0].user_id);
             userQueryData.push(userData.newUsername);
         }
         userQueryData.push(userData.id);
-        userQueryData.push(userData.oldUsername);
+        userQueryData.push(results[0][0].name);
         userQueryData.push(userData.newUsername);
-        userQueryData.push(userData.oldUsername);
+        userQueryData.push(results[0][0].name);
         userQueryData.push(userData.newUsername);
-        userQueryData.push(userData.oldUsername);
+        userQueryData.push(results[0][0].name);
+        userQueryData.push(userData.trip_id);
 
         pool.query(sqlQuery, userQueryData, function (err, result) {
             if (err) {
@@ -295,6 +322,18 @@ function editTripUser(userData, callback, error) {
             return callback();
         });
 
+    });
+}
+
+// remove user from trip
+function removeUser(userData, callback, error) {
+    let sqlQuery = "UPDATE user_trips SET in_trip = 0 WHERE id = ?";
+    pool.query(sqlQuery, [userData.id], function (err, result) {
+        if (err) {
+            console.error('error query: ' + err.stack);
+            error();
+        } 
+        return callback();
     });
 }
 
@@ -309,5 +348,7 @@ module.exports = {
     addTransaction,
     getLedger,
     editTrip,
-    editTripUser
+    editTripUser,
+    removeUser,
+    addUser
 }

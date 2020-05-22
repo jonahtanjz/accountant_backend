@@ -143,6 +143,7 @@ app.get('/api/getledger', function (req, res) {
     }
 });
 
+// edit trip name
 app.post('/api/edittrip', function (req, res) {
     const tripData = req.body;
     db.editTrip(tripData, () => {
@@ -150,10 +151,33 @@ app.post('/api/edittrip', function (req, res) {
     }, () => errorMessage(res));
 });
 
+// edit user's name in a trip
 app.post('/api/edittripuser', function (req, res) {
   const userData = req.body;
-  db.editTrip(userData, () => {
-    return res.json({ message: "Success" });
+  db.editTripUser(userData, () => {
+    return db.getTripInfo(userData.trip_id, tripData => {
+      return res.json({trip: tripData[0], users: tripData[1], currency: tripData[2]});
+    }, () => errorMessage(res));
+  }, () => errorMessage(res));
+});
+
+// add one user to trip
+app.post('/api/adduser', function (req, res) {
+  const userData = req.body;
+  db.addUser(userData, () => {
+    return db.getTripInfo(userData.trip_id, tripData => {
+      return res.json({trip: tripData[0], users: tripData[1], currency: tripData[2]});
+    }, () => errorMessage(res));
+  }, () => errorMessage(res));
+});
+
+// remove user from trip
+app.post('/api/removeuser', function (req, res) {
+  const userData = req.body;
+  db.removeUser(userData, () => {
+    return db.getTripInfo(userData.trip_id, tripData => {
+      return res.json({trip: tripData[0], users: tripData[1], currency: tripData[2]});
+    }, () => errorMessage(res));
   }, () => errorMessage(res));
 });
 
