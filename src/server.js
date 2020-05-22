@@ -147,7 +147,9 @@ app.get('/api/getledger', function (req, res) {
 app.post('/api/edittrip', function (req, res) {
     const tripData = req.body;
     db.editTrip(tripData, () => {
-      return res.json({ message: "Success" });
+      return db.getTripInfo(tripData.trip_id, tripData => {
+        return res.json({trip: tripData[0], users: tripData[1], currency: tripData[2]});
+      }, () => errorMessage(res));
     }, () => errorMessage(res));
 });
 
