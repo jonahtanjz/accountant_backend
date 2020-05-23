@@ -97,7 +97,7 @@ function addUsers(users, trip_id, callback, error) {
 }
 
 // add one user to the trip
-function addUser(userData, callback, error) {
+function addNewUser(userData, callback, error) {
     let sqlQuery = "SELECT id FROM user_trips WHERE trip_id = ? AND name = ?";
     pool.query(sqlQuery, [userData.trip_id, userData.username], function (err, result) {
         if (err) {
@@ -139,6 +139,29 @@ function addCurrency(currency, trip_id, callback, error) {
     });
 }
 
+// add one new currency to the trip
+function addNewCurrency(currencyData, callback, error) {
+    let sqlQuery = "SELECT name FROM currency WHERE trip_id = ? AND name = ?";
+    pool.query(sqlQuery, [currencyData.trip_id, currencyData.currency[0]], function (err, result) {
+        if (err) {
+            console.error('error query: ' + err.stack);
+            return error();
+        }
+        if (result.length === 0) {
+            return addCurrency([currencyData.currency], currencyData.trip_id, callback, error);
+        } else {
+            let sqlQuery = "UPDATE currency SET value = ?, in_trip = 1 WHERE trip_id = ? AND name = ?";
+            pool.query(sqlQuery, [currencyData.currency[1], currencyData.trip_id, result[0].name], function (err, result) {
+                if (err) {
+                    console.error('error query: ' + err.stack);
+                    return error();
+                }
+                return callback();
+            });
+        }
+    });
+}
+
 // Get all trips from a user
 function getTrips(userId, callback, error) {
     let sqlQuery = "SELECT trip_id, in_trip FROM user_trips WHERE user_id = ?";
@@ -172,7 +195,7 @@ function getTrips(userId, callback, error) {
 function getTripInfo(tripId, callback, error) {
     let sqlQuery = "SELECT * FROM trips WHERE trip_id = ?;"
             + "SELECT id, name, in_trip FROM user_trips WHERE trip_id = ?;" 
-            + "SELECT name, value FROM currency WHERE trip_id = ?;";
+            + "SELECT name, value, in_trip FROM currency WHERE trip_id = ?;";
 
     pool.query(sqlQuery, [tripId, tripId, tripId], function (err, results) {
         if (err) {
@@ -247,7 +270,7 @@ function addTransaction(transactionData, callback, error) {
             console.error('error query: ' + err.stack);
             return error();
         }
-        callback();
+        return callback();
     });
 }
 
@@ -276,7 +299,7 @@ function editTrip(tripData, callback, error) {
     pool.query(sqlQuery, [tripData.tripName, tripData.trip_id], function (err, result) {
         if (err) {
             console.error('error query: ' + err.stack);
-            error();
+            return error();
         } 
         return callback();
     });
@@ -317,7 +340,7 @@ function editTripUser(userData, callback, error) {
         pool.query(sqlQuery, userQueryData, function (err, result) {
             if (err) {
                 console.error('error query: ' + err.stack);
-                error();
+                return error();
             } 
             return callback();
         });
@@ -331,8 +354,59 @@ function removeUser(userData, callback, error) {
     pool.query(sqlQuery, [userData.id], function (err, result) {
         if (err) {
             console.error('error query: ' + err.stack);
-            error();
+            return error();
         } 
+        return callback();
+    });
+}
+
+// edit currency name and value from a trip
+function editTripCurrency(currencyData, callback, error) {
+    let sqlQuery = "UPDATE currency SET name = ?, value = ? WHERE trip_id = ? AND name = ?;"
+            + "UPDATE transactions SET currency = ? WHERE currency = ? AND trip_id = ?;";
+    let currencyQueryData = [currencyData.newName, currencyData.newValue, currencyData.trip_id,
+            currencyData.originalName, currencyData.newName, currencyData.originalName, currencyData.trip_id];
+    pool.query(sqlQuery, currencyQueryData, function (err, result) {
+        if (err) {
+            console.error('error query: ' + err.stack);
+            return error();
+        }
+        return callback();
+    });        
+}
+
+// remove a currency from a trip 
+function removeCurrency(currencyData, callback, error) {
+    let sqlQuery = "UPDATE currency SET in_trip = 0 WHERE trip_id = ? AND name = ?";
+    pool.query(sqlQuery, [currencyData.trip_id, currencyData.name], function (err, result) {
+        if (err) {
+            console.error('error query: ' + err.stack);
+            return error();
+        }
+        return callback();
+    })
+}
+
+// end a trip
+function endTrip(tripId, callback, error) {
+    let sqlQuery = "UPDATE trips SET ended = 1 WHERE trip_id = ?";
+    pool.query(sqlQuery, [tripId], function (err, result) {
+        if (err) {
+            console.error('error query: ' + err.stack);
+            return error();
+        }
+        return callback();
+    });
+}
+
+// undo end trip
+function undoEndTrip(tripId, callback, error) {
+    let sqlQuery = "UPDATE trips SET ended = 0 WHERE trip_id = ?";
+    pool.query(sqlQuery, [tripId], function (err, result) {
+        if (err) {
+            console.error('error query: ' + err.stack);
+            return error();
+        }
         return callback();
     });
 }
@@ -350,5 +424,10 @@ module.exports = {
     editTrip,
     editTripUser,
     removeUser,
-    addUser
+    addNewUser,
+    addNewCurrency,
+    editTripCurrency,
+    removeCurrency,
+    endTrip,
+    undoEndTrip
 }

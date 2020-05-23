@@ -166,7 +166,7 @@ app.post('/api/edittripuser', function (req, res) {
 // add one user to trip
 app.post('/api/adduser', function (req, res) {
   const userData = req.body;
-  db.addUser(userData, () => {
+  db.addNewUser(userData, () => {
     return db.getTripInfo(userData.trip_id, tripData => {
       return res.json({trip: tripData[0], users: tripData[1], currency: tripData[2]});
     }, () => errorMessage(res));
@@ -180,6 +180,52 @@ app.post('/api/removeuser', function (req, res) {
     return db.getTripInfo(userData.trip_id, tripData => {
       return res.json({trip: tripData[0], users: tripData[1], currency: tripData[2]});
     }, () => errorMessage(res));
+  }, () => errorMessage(res));
+});
+
+// edit currency in a trip
+app.post('/api/edittripcurrency', function (req, res) {
+  const currencyData = req.body;
+  db.editTripCurrency(currencyData, () => {
+    return db.getTripInfo(currencyData.trip_id, tripData => {
+      return res.json({trip: tripData[0], users: tripData[1], currency: tripData[2]});
+    }, () => errorMessage(res));
+  }, () => errorMessage(res));
+});
+
+// add new currency to trip
+app.post('/api/addcurrency', function (req, res) {
+  const currencyData = req.body;
+  db.addNewCurrency(currencyData, () => {
+    return db.getTripInfo(currencyData.trip_id, tripData => {
+      return res.json({trip: tripData[0], users: tripData[1], currency: tripData[2]});
+    }, () => errorMessage(res));
+  }, () => errorMessage(res));
+});
+
+// remove currency from trip
+app.post('/api/removecurrency', function (req, res) {
+  const currencyData = req.body;
+  db.removeCurrency(currencyData, () => {
+    return db.getTripInfo(currencyData.trip_id, tripData => {
+      return res.json({trip: tripData[0], users: tripData[1], currency: tripData[2]});
+    }, () => errorMessage(res));
+  }, () => errorMessage(res));
+});
+
+// end trip
+app.post('/api/endtrip', function (req, res) {
+    const tripId = req.body.trip_id;
+    db.endTrip(tripId, () => {
+      return res.json({message: "Success"});
+    }, () => errorMessage(res));
+});
+
+// undo end trip
+app.post('/api/undoendtrip', function (req, res) {
+  const tripId = req.body.trip_id;
+  db.undoEndTrip(tripId, () => {
+    return res.json({message: "Success"});
   }, () => errorMessage(res));
 });
 
