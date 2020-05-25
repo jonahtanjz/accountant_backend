@@ -148,4 +148,25 @@ router.post('/undoendtrip', function (req, res) {
   }, () => errorMessage(res));
 });
 
+router.get('/gettransaction', function (req, res) {
+  const tripData = req.query;
+  db.getTransaction(tripData, transactionData => {
+    return res.json({ trip: transactionData[0], users: transactionData[1], transactions: transactionData[2], currency: transactionData[3] });
+  }, () => errorMessage(res));
+});
+
+router.post('/edittransaction', function (req, res) {
+  const transactionData = req.body;
+  db.editTransaction(transactionData, () => {
+    return res.json({ message: "Success" });
+  }, () => errorMessage(res));
+});
+
+router.post('/deletetransaction', function (req, res) {
+  const transactionData = req.body;
+  db.deleteTransaction(transactionData, () => {
+    return res.json({ message: "Success" });
+  }, () => errorMessage(res));
+});
+
 module.exports = router;
