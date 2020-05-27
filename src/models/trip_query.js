@@ -138,8 +138,12 @@ function getTrips(userId, callback, error) {
                     return error();
                 }
                 if (results.length === 1) {
+                    results.in_trip = result.in_trip; 
                     return callback([results]);
                 } else {
+                    for (let i = 0; i < results.length; i++) {
+                        results[i][0].in_trip = result[i].in_trip;
+                    }
                     return callback(results);
                 }
             }); 
@@ -399,9 +403,9 @@ function undoEndTrip(tripId, callback, error) {
 
 function getTransaction(tripData, callback, error) {
     let sqlQuery = "SELECT * FROM trips WHERE trip_id = ?;"
-            + "SELECT name FROM user_trips WHERE trip_id = ?;"
+            + "SELECT id, name, in_trip FROM user_trips WHERE trip_id = ?;"
             + "SELECT * FROM original_transactions WHERE transaction_id = ?;" 
-            + "SELECT name, value FROM currency WHERE trip_id = ?;";
+            + "SELECT name, value, in_trip FROM currency WHERE trip_id = ?;";
     pool.query(sqlQuery, [tripData.trip_id, tripData.trip_id, tripData.transactionid, tripData.trip_id], function (err, result) {
         if (err) {
             console.error('error query: ' + err.stack);
