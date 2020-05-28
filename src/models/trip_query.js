@@ -138,7 +138,7 @@ function getTrips(userId, callback, error) {
                     return error();
                 }
                 if (results.length === 1) {
-                    results.in_trip = result.in_trip; 
+                    results[0].in_trip = result[0].in_trip; 
                     return callback([results]);
                 } else {
                     for (let i = 0; i < results.length; i++) {
