@@ -225,7 +225,7 @@ function addTransaction(transactionData, callback, error) {
         });
 
         for (let i = 0; i < payees.length; i++) {
-            while (payees[i][1] !== 0) {
+            while (payees[i][1] > 0.005 && payersCount < payers.length) {
                 if (payers[payersCount][1] > payees[i][1]) {
                     if (payees[i][0] !== payers[payersCount][0]) {
                         sqlQuery = sqlQuery + sqlTemplate;
