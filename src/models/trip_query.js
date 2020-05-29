@@ -61,7 +61,7 @@ function addNewUser(userData, callback, error) {
         if (result.length === 0) {
             return addUsers([userData.username], userData.trip_id, callback, error);
         } else {
-            let sqlQuery = "UPDATE user_trips SET in_trip = 1 WHERE id = ?";
+            let sqlQuery = "UPDATE user_trips SET in_trip = 1, deleted = 0 WHERE id = ?";
             pool.query(sqlQuery, [result[0].id], function (err, result) {
                 if (err) {
                     console.error('error query: ' + err.stack);
@@ -118,7 +118,7 @@ function addNewCurrency(currencyData, callback, error) {
 
 // Get all trips from a user
 function getTrips(userId, callback, error) {
-    let sqlQuery = "SELECT trip_id, in_trip FROM user_trips WHERE user_id = ?";
+    let sqlQuery = "SELECT trip_id, in_trip, deleted FROM user_trips WHERE user_id = ?";
     pool.query(sqlQuery, [userId], function (err, result) {
         if (err) {
             console.error('error query: ' + err.stack);
@@ -139,10 +139,12 @@ function getTrips(userId, callback, error) {
                 }
                 if (results.length === 1) {
                     results[0].in_trip = result[0].in_trip; 
+                    results[0].deleted = result[0].deleted; 
                     return callback([results]);
                 } else {
                     for (let i = 0; i < results.length; i++) {
                         results[i][0].in_trip = result[i].in_trip;
+                        results[i][0].deleted = result[i].deleted; 
                     }
                     return callback(results);
                 }
@@ -437,6 +439,28 @@ function deleteTransaction(transactionData, callback, error) {
     });
 }
 
+function deleteTrip(userData, callback, error) {
+    let sqlQuery = "UPDATE user_trips SET in_trip = 0, deleted = 1 WHERE user_id = ? AND trip_id = ?";
+    pool.query(sqlQuery, [userData.user_id, userData.trip_id], function (err, result) {
+        if (err) {
+            console.error('error query: ' + err.stack);
+            return error();
+        }
+        return callback(userData.user_id);
+    });
+}
+
+function deleteTripForAll(tripData, callback, error) {
+    let sqlQuery = "DELETE FROM trips WHERE trip_id = ?";
+    pool.query(sqlQuery, [tripData.trip_id], function (err, result) {
+        if (err) {
+            console.error('error query: ' + err.stack);
+            return error();
+        }
+        return callback(tripData.user_id);
+    });
+}
+
 module.exports = {
     addTrip,
     addUsers, 
@@ -456,5 +480,7 @@ module.exports = {
     undoEndTrip,
     getTransaction,
     editTransaction,
-    deleteTransaction
+    deleteTransaction,
+    deleteTrip,
+    deleteTripForAll
 }

@@ -169,4 +169,22 @@ router.post('/deletetransaction', function (req, res) {
   }, () => errorMessage(res));
 });
 
+router.post('/deletetrip', function (req, res) {
+  const userData = req.body;
+  db.deleteTrip(userData, userId => {
+    return db.getTrips(userId, tripsData => {
+      return res.json({ trips: tripsData });
+    }, () => errorMessage(res));
+  }, () => errorMessage(res));
+});
+
+router.post('/deletetripall', function (req, res) {
+  const tripData = req.body;
+  db.deleteTripForAll(tripData, userId => {
+    return db.getTrips(userId, tripsData => {
+      return res.json({ trips: tripsData });
+    }, () => errorMessage(res));
+  }, () => errorMessage(res));
+});
+
 module.exports = router;
