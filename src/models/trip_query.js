@@ -158,7 +158,7 @@ function getTrips(userId, callback, error) {
 // get individual trip info
 function getTripInfo(tripId, callback, error) {
     let sqlQuery = "SELECT * FROM trips WHERE trip_id = ?;"
-            + "SELECT id, name, in_trip FROM user_trips WHERE trip_id = ?;" 
+            + "SELECT id, user_id, name, in_trip FROM user_trips WHERE trip_id = ?;" 
             + "SELECT name, value, in_trip FROM currency WHERE trip_id = ?;";
 
     pool.query(sqlQuery, [tripId, tripId, tripId], function (err, results) {
@@ -299,35 +299,51 @@ function editTrip(tripData, callback, error) {
 
 // edit user's name in a trip
 function editTripUser(userData, callback, error) {
-    let sqlQuery = "SELECT name from user_trips WHERE id = ?;" 
-            + "SELECT user_id FROM users WHERE username = ?;";
-    pool.query(sqlQuery, [userData.id, userData.newUsername], function (err, results) {
+    let sqlQuery = "SELECT name FROM user_trips WHERE id = ?;" 
+            + "SELECT user_id FROM users WHERE username = ?;"
+            + "SELECT id FROM user_trips WHERE trip_id = ? AND name = ?;";
+    pool.query(sqlQuery, [userData.id, userData.newUsername, userData.trip_id, userData.newUsername], function (err, results) {
         if (err) {
             console.error('error query: ' + err.stack);
             return error();
         }
 
-        let sqlQuery = "UPDATE user_trips SET user_id = ?, name = ? WHERE id = ?;"
-                + "UPDATE transactions " 
-                + "SET payee = CASE payee WHEN ? THEN ? ELSE payee END, "
-                + "payer = CASE payer WHEN ? THEN ? ELSE payer END "
-                + "WHERE (? IN (payee, payer)) AND trip_id = ?;";
+        let sqlQuery = "";
         let userQueryData = [];
 
-        if (results[1].length === 0) {
-            userQueryData.push(null);
-            userQueryData.push(userData.newUsername);
+        if (results[2].length === 0) {
+            sqlQuery = "UPDATE user_trips SET user_id = ?, name = ? WHERE id = ?;";
+
+            if (results[1].length === 0) {
+                userQueryData.push(null);
+                userQueryData.push(userData.newUsername);
+            } else {
+                userQueryData.push(results[1][0].user_id);
+                userQueryData.push(userData.newUsername);
+            }
+            userQueryData.push(userData.id);
         } else {
-            userQueryData.push(results[1][0].user_id);
-            userQueryData.push(userData.newUsername);
+            sqlQuery = "UPDATE user_trips SET in_trip = 1 WHERE id = ?;"
+                    + "UPDATE user_trips SET in_trip = 0 WHERE id = ?;";
+            userQueryData.push(results[2][0].id);
+            userQueryData.push(userData.id);        
         }
-        userQueryData.push(userData.id);
+
+        sqlQuery = "UPDATE transactions " 
+                + "SET payee = CASE payee WHEN ? THEN ? ELSE payee END, "
+                + "payer = CASE payer WHEN ? THEN ? ELSE payer END "
+                + "WHERE (? IN (payee, payer)) AND trip_id = ?;"
+                + "UPDATE original_transactions SET name = ? WHERE name = ? AND trip_id = ?";
+
         userQueryData.push(results[0][0].name);
         userQueryData.push(userData.newUsername);
         userQueryData.push(results[0][0].name);
         userQueryData.push(userData.newUsername);
         userQueryData.push(results[0][0].name);
         userQueryData.push(userData.trip_id);
+        userQueryData.push(userData.newUsername);
+        userQueryData.push(results[0][0].name);
+        userQueryData.push(userData.trip_id);        
 
         pool.query(sqlQuery, userQueryData, function (err, result) {
             if (err) {
@@ -354,17 +370,44 @@ function removeUser(userData, callback, error) {
 
 // edit currency name and value from a trip
 function editTripCurrency(currencyData, callback, error) {
-    let sqlQuery = "UPDATE currency SET name = ?, value = ? WHERE trip_id = ? AND name = ?;"
-            + "UPDATE transactions SET currency = ? WHERE currency = ? AND trip_id = ?;";
-    let currencyQueryData = [currencyData.newName, currencyData.newValue, currencyData.trip_id,
-            currencyData.originalName, currencyData.newName, currencyData.originalName, currencyData.trip_id];
-    pool.query(sqlQuery, currencyQueryData, function (err, result) {
+    let sqlQuery = "SELECT name FROM currency WHERE trip_id = ? AND name = ?";
+    pool.query(sqlQuery, [currencyData.trip_id, currencyData.newName], function (err, result) {
         if (err) {
             console.error('error query: ' + err.stack);
             return error();
+        } 
+
+        let sqlQuery = "";
+        let currencyQueryData = [];
+        if (result.length === 0) {
+            sqlQuery = "UPDATE currency SET name = ?, value = ? WHERE trip_id = ? AND name = ?;";
+            currencyQueryData = [currencyData.newName, currencyData.newValue, currencyData.trip_id,
+                    currencyData.originalName];
+        } else {
+            sqlQuery = "UPDATE currency SET in_trip = 1, value = ? WHERE trip_id = ? AND name = ?;"
+                    + "UPDATE currency SET in_trip = 0 WHERE trip_id = ? AND name = ?;";
+            currencyQueryData = [currencyData.newValue, currencyData.trip_id, currencyData.newName, 
+                    currencyData.trip_id, currencyData.originalName];
         }
-        return callback();
-    });        
+
+        sqlQuery = "UPDATE transactions SET currency = ? WHERE currency = ? AND trip_id = ?;"
+                + "UPDATE original_transactions SET currency = ? WHERE currency = ? AND trip_id = ?;";
+
+        currencyQueryData.push(currencyData.newName);
+        currencyQueryData.push(currencyData.originalName);
+        currencyQueryData.push(currencyData.trip_id);
+        currencyQueryData.push(currencyData.newName);
+        currencyQueryData.push(currencyData.originalName);
+        currencyQueryData.push(currencyData.trip_id);
+
+        pool.query(sqlQuery, currencyQueryData, function (err, result) {
+            if (err) {
+                console.error('error query: ' + err.stack);
+                return error();
+            }
+            return callback();
+        });    
+    });    
 }
 
 // remove a currency from a trip 
