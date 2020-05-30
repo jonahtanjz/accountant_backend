@@ -312,7 +312,7 @@ function editTripUser(userData, callback, error) {
         let userQueryData = [];
 
         if (results[2].length === 0) {
-            sqlQuery = "UPDATE user_trips SET user_id = ?, name = ? WHERE id = ?;";
+            sqlQuery = sqlQuery + "UPDATE user_trips SET user_id = ?, name = ? WHERE id = ?;";
 
             if (results[1].length === 0) {
                 userQueryData.push(null);
@@ -323,17 +323,17 @@ function editTripUser(userData, callback, error) {
             }
             userQueryData.push(userData.id);
         } else {
-            sqlQuery = "UPDATE user_trips SET in_trip = 1 WHERE id = ?;"
+            sqlQuery = sqlQuery + "UPDATE user_trips SET in_trip = 1 WHERE id = ?;"
                     + "UPDATE user_trips SET in_trip = 0 WHERE id = ?;";
             userQueryData.push(results[2][0].id);
             userQueryData.push(userData.id);        
         }
 
-        sqlQuery = "UPDATE transactions " 
+        sqlQuery = sqlQuery + "UPDATE transactions " 
                 + "SET payee = CASE payee WHEN ? THEN ? ELSE payee END, "
                 + "payer = CASE payer WHEN ? THEN ? ELSE payer END "
                 + "WHERE (? IN (payee, payer)) AND trip_id = ?;"
-                + "UPDATE original_transactions SET name = ? WHERE name = ? AND trip_id = ?";
+                + "UPDATE original_transactions SET name = ? WHERE name = ? AND trip_id = ?;";
 
         userQueryData.push(results[0][0].name);
         userQueryData.push(userData.newUsername);
@@ -380,17 +380,17 @@ function editTripCurrency(currencyData, callback, error) {
         let sqlQuery = "";
         let currencyQueryData = [];
         if (result.length === 0) {
-            sqlQuery = "UPDATE currency SET name = ?, value = ? WHERE trip_id = ? AND name = ?;";
+            sqlQuery = sqlQuery + "UPDATE currency SET name = ?, value = ? WHERE trip_id = ? AND name = ?;";
             currencyQueryData = [currencyData.newName, currencyData.newValue, currencyData.trip_id,
                     currencyData.originalName];
         } else {
-            sqlQuery = "UPDATE currency SET in_trip = 1, value = ? WHERE trip_id = ? AND name = ?;"
+            sqlQuery = sqlQuery + "UPDATE currency SET in_trip = 1, value = ? WHERE trip_id = ? AND name = ?;"
                     + "UPDATE currency SET in_trip = 0 WHERE trip_id = ? AND name = ?;";
             currencyQueryData = [currencyData.newValue, currencyData.trip_id, currencyData.newName, 
                     currencyData.trip_id, currencyData.originalName];
         }
 
-        sqlQuery = "UPDATE transactions SET currency = ? WHERE currency = ? AND trip_id = ?;"
+        sqlQuery = sqlQuery + "UPDATE transactions SET currency = ? WHERE currency = ? AND trip_id = ?;"
                 + "UPDATE original_transactions SET currency = ? WHERE currency = ? AND trip_id = ?;";
 
         currencyQueryData.push(currencyData.newName);
