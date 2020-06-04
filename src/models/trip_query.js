@@ -423,26 +423,26 @@ function removeCurrency(currencyData, callback, error) {
 }
 
 // end a trip
-function endTrip(tripId, callback, error) {
+function endTrip(userData, callback, error) {
     let sqlQuery = "UPDATE trips SET ended = 1 WHERE trip_id = ?";
-    pool.query(sqlQuery, [tripId], function (err, result) {
+    pool.query(sqlQuery, [userData.trip_id], function (err, result) {
         if (err) {
             console.error('error query: ' + err.stack);
             return error();
         }
-        return callback();
+        return callback(userData.user_id);
     });
 }
 
 // undo end trip
-function undoEndTrip(tripId, callback, error) {
+function undoEndTrip(userData, callback, error) {
     let sqlQuery = "UPDATE trips SET ended = 0 WHERE trip_id = ?";
-    pool.query(sqlQuery, [tripId], function (err, result) {
+    pool.query(sqlQuery, [userData.trip_id], function (err, result) {
         if (err) {
             console.error('error query: ' + err.stack);
             return error();
         }
-        return callback();
+        return callback(userData.user_id);
     });
 }
 

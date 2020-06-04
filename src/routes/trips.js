@@ -134,17 +134,21 @@ router.post('/removecurrency', function (req, res) {
 
 // end trip
 router.post('/endtrip', function (req, res) {
-    const tripId = req.body.trip_id;
-    db.endTrip(tripId, () => {
-      return res.json({message: "Success"});
+    const userData = req.body;
+    db.endTrip(userData, userId => {
+      return db.getTrips(userId, tripsData => {
+        return res.json({ trips: tripsData });
+      }, () => errorMessage(res));
     }, () => errorMessage(res));
 });
 
 // undo end trip
 router.post('/undoendtrip', function (req, res) {
-  const tripId = req.body.trip_id;
-  db.undoEndTrip(tripId, () => {
-    return res.json({message: "Success"});
+  const userData = req.body;
+  db.undoEndTrip(userData, userId => {
+    return db.getTrips(userId, tripsData => {
+      return res.json({ trips: tripsData });
+    }, () => errorMessage(res));
   }, () => errorMessage(res));
 });
 
