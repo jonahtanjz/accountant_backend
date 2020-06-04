@@ -384,10 +384,10 @@ function editTripCurrency(currencyData, callback, error) {
             currencyQueryData = [currencyData.newName, currencyData.newValue, currencyData.trip_id,
                     currencyData.originalName];
         } else {
-            sqlQuery = sqlQuery + "UPDATE currency SET in_trip = 1, value = ? WHERE trip_id = ? AND name = ?;"
-                    + "UPDATE currency SET in_trip = 0 WHERE trip_id = ? AND name = ?;";
-            currencyQueryData = [currencyData.newValue, currencyData.trip_id, currencyData.newName, 
-                    currencyData.trip_id, currencyData.originalName];
+            sqlQuery = sqlQuery + "UPDATE currency SET in_trip = 0 WHERE trip_id = ? AND name = ?;"
+                    + "UPDATE currency SET in_trip = 1, value = ? WHERE trip_id = ? AND name = ?;";
+            currencyQueryData = [currencyData.trip_id, currencyData.originalName, currencyData.newValue, 
+                    currencyData.trip_id, currencyData.newName];
         }
 
         sqlQuery = sqlQuery + "UPDATE transactions SET currency = ? WHERE currency = ? AND trip_id = ?;"
