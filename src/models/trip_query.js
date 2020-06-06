@@ -278,7 +278,7 @@ function getLedger(tripId, callback, error) {
             console.error('error query: ' + err.stack);
             return error();
         }
-        if (results[0].length === 0 || results[1].length === 0 || results[3].length === 0) {
+        if (results[0].length === 0 || results[1].length === 0) {
             return error();
         }
         return callback(results);
