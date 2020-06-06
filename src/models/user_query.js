@@ -1,14 +1,19 @@
 const pool = require('./db');
+const bcrypt = require('bcrypt');
 
 // For login
 function validateSignin(userData, callback, error) {
-    let sqlQuery = "SELECT * FROM users WHERE username = ? AND password = ?";
-    pool.query(sqlQuery, [userData.username, userData.password], function (err, result, fields) {
+    let sqlQuery = "SELECT * FROM users WHERE username = ?";
+    pool.query(sqlQuery, [userData.username], function (err, result, fields) {
         if (err) {
             console.error('error query: ' + err.stack);
             return error();
         }
-        return callback(result);
+        if (bcrypt.compareSync(userData.password, result[0].password)) {
+            return callback(result);
+        } else {
+            return callback();
+        }
     });
 }
 
@@ -24,7 +29,8 @@ function userSignup(userData, callback, exists, error) {
         if (result.length === 0) {
             let sqlQuery = "INSERT INTO users (username, password) VALUES (?, ?);"
                     + "SELECT * FROM users WHERE username = ? AND password = ?;";
-            pool.query(sqlQuery, [userData.username, userData.password, userData.username, userData.password], function (err, results) {
+            const hash = bcrypt.hashSync(userData.password, 10);        
+            pool.query(sqlQuery, [userData.username, hash, userData.username, hash], function (err, results) {
                 if (err) {
                     console.error('error query: ' + err.stack);
                     return error();
