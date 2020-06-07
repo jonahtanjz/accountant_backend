@@ -9,7 +9,7 @@ function validateSignin(userData, callback, error) {
             console.error('error query: ' + err.stack);
             return error();
         }
-        if (bcrypt.compareSync(userData.password, result[0].password)) {
+        if (result.length !== 0 && bcrypt.compareSync(userData.password, result[0].password)) {
             return callback(result);
         } else {
             return callback();

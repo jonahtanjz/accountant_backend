@@ -167,7 +167,7 @@ function getTripInfo(tripId, callback, error) {
             return error();
         }
 
-        if (results[0].length === 0 || results[1].length === 0 || results[2].length === 0) {
+        if (results[0].length === 0 || results[1].length === 0) {
             return error();
         }
         return callback(results);
