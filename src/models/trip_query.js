@@ -1,17 +1,18 @@
 const pool = require('./db');
-import { v4 as uuidv4 } from 'uuid';
+const uuid = require('uuid');
 
 // For new trip
 function addTrip(tripData, callback, error) {
     let sqlQuery = "INSERT INTO trips (trip_id, trip_name, owner) VALUES (?, ?, ?)"
-    pool.query(sqlQuery, [uuidv4(), tripData.tripName, tripData.user_id], function (err, result) {
+    let tripId = uuid.v4();
+    pool.query(sqlQuery, [tripId, tripData.tripName, tripData.user_id], function (err, result) {
         if (err) {
             console.error('error query: ' + err.stack);
             return error();
         }
 
-        return addUsers(tripData.users, result.insertId, () => { 
-                addCurrency(tripData.currency, result.insertId, () => callback(result.insertId), error);
+        return addUsers(tripData.users, tripId, () => { 
+                addCurrency(tripData.currency, tripId, () => callback(tripId), error);
             }, error);
     });
 }
