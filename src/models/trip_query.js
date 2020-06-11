@@ -1,10 +1,10 @@
 const pool = require('./db');
-const uuid = require('uuid');
+const { v4: uuidv4 } = require('uuid');
 
 // For new trip
 function addTrip(tripData, callback, error) {
     let sqlQuery = "INSERT INTO trips (trip_id, trip_name, owner) VALUES (?, ?, ?)"
-    let tripId = uuid.v4();
+    let tripId = uuidv4();
     pool.query(sqlQuery, [tripId, tripData.tripName, tripData.user_id], function (err, result) {
         if (err) {
             console.error('error query: ' + err.stack);

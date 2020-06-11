@@ -1,6 +1,6 @@
 const pool = require('./db');
 const bcrypt = require('bcrypt');
-const uuid = require('uuid');
+const { v4: uuidv4 } = require('uuid');
 
 // For login
 function validateSignin(userData, callback, error) {
@@ -31,7 +31,7 @@ function userSignup(userData, callback, exists, error) {
             let sqlQuery = "INSERT INTO users (user_id, username, password) VALUES (?, ?, ?);"
                     + "SELECT * FROM users WHERE username = ? AND password = ?;";
             const hash = bcrypt.hashSync(userData.password, 10);  
-            let userId = uuid.v4();      
+            let userId = uuidv4();      
             pool.query(sqlQuery, [userId, userData.username, hash, userData.username, hash], function (err, results) {
                 if (err) {
                     console.error('error query: ' + err.stack);
