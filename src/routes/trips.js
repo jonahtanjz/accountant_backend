@@ -191,4 +191,14 @@ router.post('/deletetripall', function (req, res) {
   }, () => errorMessage(res));
 });
 
+// make payment from suggested payment
+router.post('/makepayment', function (req, res) {
+  const transactionData = req.body;
+  db.addTransaction(transactionData, () => {
+    return db.getLedger(transactionData.trip_id, tripData => {
+      return res.json({ trip: tripData[0], users: tripData[1], transactions: tripData[2], currency: tripData[3] });
+    }, () => errorMessage(res));
+  }, () => errorMessage(res));
+});
+
 module.exports = router;
