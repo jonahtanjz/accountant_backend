@@ -83,4 +83,30 @@ router.get('/verifyToken', function (req, res) {
     });
 });
 
+router.post('/changeusername', function (req, res) {
+    const userData = req.body;
+    db.changeUsername(userData, () => {
+      // generate token
+      const token = utils.generateToken(userData);
+      // get basic user details
+      const userObj = utils.getCleanUser(userData);
+      // return the token along with user details
+      return res.json({ 
+        message: "Success", 
+        user: userObj, token 
+      });
+    }, () => errorMessage(res));
+});
+
+router.post('/changepassword', function (req, res) {
+  const userData = req.body;
+  db.changePassword(userData, () => {
+    return res.json({message: "Success"});
+  }, () => {
+    return res.status(401).json({
+      message: "Current password is wrong."
+    });
+  }, () => errorMessage(res));
+});
+
 module.exports = router;
