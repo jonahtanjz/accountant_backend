@@ -24,7 +24,7 @@ function addUsers(users, trip_id, callback, error) {
     let userData = [];
     function synchronousForLoop(i) {
         sqlQuery = sqlQuery + sqlTemplate;
-        pool.query("SELECT user_id FROM users WHERE username = ?", [users[i]], function (err, result) {
+        pool.query("SELECT user_id, username FROM users WHERE username = ?", [users[i]], function (err, result) {
             if (err) {
                 console.error('error query: ' + err.stack);
                 return error();
@@ -36,7 +36,7 @@ function addUsers(users, trip_id, callback, error) {
             } else {
                 userData.push(result[0].user_id);
                 userData.push(trip_id);
-                userData.push(users[i]);
+                userData.push(result[0].username);
             }
 
             if (i === users.length - 1) {
@@ -373,7 +373,7 @@ function editTrip(tripData, callback, error) {
 // edit user's name in a trip
 function editTripUser(userData, callback, error) {
     let sqlQuery = "SELECT user_id, name FROM user_trips WHERE id = ?;" 
-            + "SELECT user_id FROM users WHERE username = ?;"
+            + "SELECT user_id, username FROM users WHERE username = ?;"
             + "SELECT id FROM user_trips WHERE trip_id = ? AND name = ?;";
     pool.query(sqlQuery, [userData.id, userData.newUsername, userData.trip_id, userData.newUsername], function (err, results) {
         if (err) {
@@ -392,7 +392,7 @@ function editTripUser(userData, callback, error) {
                 userQueryData.push(userData.newUsername);
             } else {
                 userQueryData.push(results[1][0].user_id);
-                userQueryData.push(userData.newUsername);
+                userQueryData.push(results[1][0].username);
             }
             userQueryData.push(userData.id);
         } else {

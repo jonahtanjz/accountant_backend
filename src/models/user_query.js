@@ -46,8 +46,9 @@ function userSignup(userData, callback, exists, error) {
 }
 
 function changeUsername(userData, callback, error) {
-    let sqlQuery = "UPDATE users SET username = ? WHERE user_id = ?";
-    pool.query(sqlQuery, [userData.username, userData.user_id], function (err, result) {
+    let sqlQuery = "UPDATE users SET username = ? WHERE user_id = ?;"
+            + "UPDATE user_trips SET name = ? WHERE user_id = ?;";
+    pool.query(sqlQuery, [userData.username, userData.user_id, userData.username, userData.user_id], function (err, result) {
         if (err) {
             console.error('error query: ' + err.stack);
             return error();
