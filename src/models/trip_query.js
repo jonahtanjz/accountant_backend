@@ -396,10 +396,10 @@ function editTripUser(userData, callback, error) {
             }
             userQueryData.push(userData.id);
         } else {
-            sqlQuery = sqlQuery + "UPDATE user_trips SET in_trip = 1 WHERE id = ?;"
-                    + "UPDATE user_trips SET in_trip = 0 WHERE id = ?;";
-            userQueryData.push(results[2][0].id);
-            userQueryData.push(userData.id);        
+            sqlQuery = sqlQuery + "UPDATE user_trips SET in_trip = 0 WHERE id = ?;" 
+                    + "UPDATE user_trips SET in_trip = 1 WHERE id = ?;";
+            userQueryData.push(userData.id);
+            userQueryData.push(results[2][0].id);        
         }
 
         sqlQuery = sqlQuery + "UPDATE transactions " 
