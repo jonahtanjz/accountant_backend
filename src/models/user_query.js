@@ -80,10 +80,22 @@ function changePassword(userData, callback, wrongPassword, error) {
     });
 }
 
+function checkUsername(username, callback, error) {
+    let sqlQuery = "SELECT user_id FROM users WHERE username = ?";
+    pool.query(sqlQuery, [username], function (err, result) {
+        if (err) {
+            console.error('error query: ' + err.stack);
+            return error();
+        }
+        return callback(result);
+    });
+}
+
 module.exports = {
     validateSignin,
     userSignup,
     changeUsername,
-    changePassword
+    changePassword,
+    checkUsername
 }
 

@@ -24,15 +24,15 @@ function addUsers(users, trip_id, callback, error) {
     let userData = [];
     function synchronousForLoop(i) {
         sqlQuery = sqlQuery + sqlTemplate;
-        pool.query("SELECT user_id, username FROM users WHERE username = ?", [users[i]], function (err, result) {
+        pool.query("SELECT user_id, username FROM users WHERE username = ?", [users[i].username], function (err, result) {
             if (err) {
                 console.error('error query: ' + err.stack);
                 return error();
             }
-            if (result.length === 0) {
+            if (result.length === 0 || !users[i].hasAccount) {
                 userData.push(null);
                 userData.push(trip_id);
-                userData.push(users[i]);
+                userData.push(users[i].username);
             } else {
                 userData.push(result[0].user_id);
                 userData.push(trip_id);
@@ -58,13 +58,13 @@ function addUsers(users, trip_id, callback, error) {
 // add one user to the trip
 function addNewUser(userData, callback, error) {
     let sqlQuery = "SELECT id FROM user_trips WHERE trip_id = ? AND name = ?";
-    pool.query(sqlQuery, [userData.trip_id, userData.username], function (err, result) {
+    pool.query(sqlQuery, [userData.trip_id, userData.user.username], function (err, result) {
         if (err) {
             console.error('error query: ' + err.stack);
             return error();
         }
         if (result.length === 0) {
-            return addUsers([userData.username], userData.trip_id, callback, error);
+            return addUsers([userData.user], userData.trip_id, callback, error);
         } else {
             let sqlQuery = "UPDATE user_trips SET in_trip = 1, deleted = 0 WHERE id = ?";
             pool.query(sqlQuery, [result[0].id], function (err, result) {
@@ -375,7 +375,7 @@ function editTripUser(userData, callback, error) {
     let sqlQuery = "SELECT user_id, name FROM user_trips WHERE id = ?;" 
             + "SELECT user_id, username FROM users WHERE username = ?;"
             + "SELECT id FROM user_trips WHERE trip_id = ? AND name = ?;";
-    pool.query(sqlQuery, [userData.id, userData.newUsername, userData.trip_id, userData.newUsername], function (err, results) {
+    pool.query(sqlQuery, [userData.id, userData.newUser.username, userData.trip_id, userData.newUser.username], function (err, results) {
         if (err) {
             console.error('error query: ' + err.stack);
             return error();
@@ -387,9 +387,9 @@ function editTripUser(userData, callback, error) {
         if (results[2].length === 0) {
             sqlQuery = sqlQuery + "UPDATE user_trips SET user_id = ?, name = ? WHERE id = ?;";
 
-            if (results[1].length === 0) {
+            if (results[1].length === 0 || !userData.newUser.hasAccount) {
                 userQueryData.push(null);
-                userQueryData.push(userData.newUsername);
+                userQueryData.push(userData.newUser.username);
             } else {
                 userQueryData.push(results[1][0].user_id);
                 userQueryData.push(results[1][0].username);
@@ -397,29 +397,34 @@ function editTripUser(userData, callback, error) {
             userQueryData.push(userData.id);
         } else {
             sqlQuery = sqlQuery + "UPDATE user_trips SET in_trip = 0 WHERE id = ?;" 
-                    + "UPDATE user_trips SET in_trip = 1 WHERE id = ?;";
+                    + "UPDATE user_trips SET user_id = ?, in_trip = 1 WHERE id = ?;";      
             userQueryData.push(userData.id);
+            if (userData.newUser.hasAccount) {
+                userQueryData.push(results[1][0].user_id);
+            } else {
+                userQueryData.push(null);
+            }  
             userQueryData.push(results[2][0].id);        
         }
 
         sqlQuery = sqlQuery + "UPDATE transactions " 
-                + "SET " + (results[1].length === 0 ? "payee" : "payee_id") + " = CASE " + (results[0][0].user_id === null ? "payee" : "payee_id") + " WHEN ? THEN ? ELSE " + (results[1].length === 0 ? "payee" : "payee_id") + " END, "
-                + (results[1].length === 0 ? "payer" : "payer_id") + " = CASE " + (results[0][0].user_id === null ? "payer" : "payer_id") + " WHEN ? THEN ? ELSE " + (results[1].length === 0 ? "payer" : "payer_id") + " END, "
-                + (results[1].length === 0 ? "payee_id" : "payee") + " = CASE " + (results[1].length === 0 ? "payee_id" : "payee") + " WHEN ? THEN NULL ELSE " + (results[1].length === 0 ? "payee_id" : "payee") + " END, "
-                + (results[1].length === 0 ? "payer_id" : "payer") + " = CASE " + (results[1].length === 0 ? "payer_id" : "payer") + " WHEN ? THEN NULL ELSE " + (results[1].length === 0 ? "payer_id" : "payer") + " END "
+                + "SET " + (results[1].length === 0 || !userData.newUser.hasAccount ? "payee" : "payee_id") + " = CASE " + (results[0][0].user_id === null ? "payee" : "payee_id") + " WHEN ? THEN ? ELSE " + (results[1].length === 0 || !userData.newUser.hasAccount ? "payee" : "payee_id") + " END, "
+                + (results[1].length === 0 || !userData.newUser.hasAccount ? "payer" : "payer_id") + " = CASE " + (results[0][0].user_id === null ? "payer" : "payer_id") + " WHEN ? THEN ? ELSE " + (results[1].length === 0 || !userData.newUser.hasAccount ? "payer" : "payer_id") + " END, "
+                + (results[1].length === 0 || !userData.newUser.hasAccount ? "payee_id" : "payee") + " = CASE " + (results[1].length === 0 || !userData.newUser.hasAccount ? "payee_id" : "payee") + " WHEN ? THEN NULL ELSE " + (results[1].length === 0 || !userData.newUser.hasAccount ? "payee_id" : "payee") + " END, "
+                + (results[1].length === 0 || !userData.newUser.hasAccount ? "payer_id" : "payer") + " = CASE " + (results[1].length === 0 || !userData.newUser.hasAccount ? "payer_id" : "payer") + " WHEN ? THEN NULL ELSE " + (results[1].length === 0 || !userData.newUser.hasAccount ? "payer_id" : "payer") + " END "
                 + "WHERE " + (results[0][0].user_id === null ? "(? IN (payee, payer))" : "(? IN (payee_id, payer_id))") + " AND trip_id = ?;"
-                + "UPDATE original_transactions SET " + (results[1].length === 0 ? "user_id = NULL, name = ? " : "user_id = ?, name = NULL ") 
+                + "UPDATE original_transactions SET " + (results[1].length === 0 || !userData.newUser.hasAccount ? "user_id = NULL, name = ? " : "user_id = ?, name = NULL ") 
                 + "WHERE " + (results[0][0].user_id === null ? "name" : "user_id") + " = ? AND trip_id = ?;";
 
         results[0][0].user_id === null ? userQueryData.push(results[0][0].name) : userQueryData.push(results[0][0].user_id);
-        results[1].length === 0 ? userQueryData.push(userData.newUsername) : userQueryData.push(results[1][0].user_id);
+        results[1].length === 0 || !userData.newUser.hasAccount ? userQueryData.push(userData.newUser.username) : userQueryData.push(results[1][0].user_id);
         results[0][0].user_id === null ? userQueryData.push(results[0][0].name) : userQueryData.push(results[0][0].user_id);
-        results[1].length === 0 ? userQueryData.push(userData.newUsername) : userQueryData.push(results[1][0].user_id);
+        results[1].length === 0 || !userData.newUser.hasAccount ? userQueryData.push(userData.newUser.username) : userQueryData.push(results[1][0].user_id);
         results[0][0].user_id === null ? userQueryData.push(results[0][0].name) : userQueryData.push(results[0][0].user_id);
         results[0][0].user_id === null ? userQueryData.push(results[0][0].name) : userQueryData.push(results[0][0].user_id);
         results[0][0].user_id === null ? userQueryData.push(results[0][0].name) : userQueryData.push(results[0][0].user_id);
         userQueryData.push(userData.trip_id);
-        results[1].length === 0 ? userQueryData.push(userData.newUsername) : userQueryData.push(results[1][0].user_id);
+        results[1].length === 0 || !userData.newUser.hasAccount ? userQueryData.push(userData.newUser.username) : userQueryData.push(results[1][0].user_id);
         results[0][0].user_id === null ? userQueryData.push(results[0][0].name) : userQueryData.push(results[0][0].user_id);
         userQueryData.push(userData.trip_id);     
 

@@ -109,4 +109,13 @@ router.post('/changepassword', function (req, res) {
   }, () => errorMessage(res));
 });
 
+router.post('/checkusername', function (req, res) {
+  const username = req.body.username;
+  db.checkUsername(username, status => {
+    return res.json({
+      exists: (status.length === 0 ? false : true)
+    });
+  }, () => errorMessage(res));
+});
+
 module.exports = router;
