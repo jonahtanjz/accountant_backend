@@ -57,17 +57,27 @@ function addUsers(users, trip_id, callback, error) {
 
 // add one user to the trip
 function addNewUser(userData, callback, error) {
-    let sqlQuery = "SELECT id FROM user_trips WHERE trip_id = ? AND name = ?";
-    pool.query(sqlQuery, [userData.trip_id, userData.user.username], function (err, result) {
+    let sqlQuery = "SELECT id FROM user_trips WHERE trip_id = ? AND name = ?;"
+            + "SELECT user_id, username FROM users WHERE username = ?;";
+    pool.query(sqlQuery, [userData.trip_id, userData.user.username, userData.user.username], function (err, results) {
         if (err) {
             console.error('error query: ' + err.stack);
             return error();
         }
-        if (result.length === 0) {
+        if (results[0].length === 0) {
             return addUsers([userData.user], userData.trip_id, callback, error);
         } else {
-            let sqlQuery = "UPDATE user_trips SET in_trip = 1, deleted = 0 WHERE id = ?";
-            pool.query(sqlQuery, [result[0].id], function (err, result) {
+            let sqlQuery = "UPDATE user_trips SET user_id = ?, name = ?, in_trip = 1, deleted = 0 WHERE id = ?";
+            let userQueryData = [];
+            if (results[1].length === 0 || !userData.user.hasAccount) {
+                userQueryData.push(null);
+                userQueryData.push(userData.user.username);
+            } else {
+                userQueryData.push(results[1][0].user_id);
+                userQueryData.push(results[1][0].username);
+            }
+            userQueryData.push(results[0][0].id);
+            pool.query(sqlQuery, userQueryData, function (err, result) {
                 if (err) {
                     console.error('error query: ' + err.stack);
                     return error();
@@ -397,12 +407,14 @@ function editTripUser(userData, callback, error) {
             userQueryData.push(userData.id);
         } else {
             sqlQuery = sqlQuery + "UPDATE user_trips SET in_trip = 0 WHERE id = ?;" 
-                    + "UPDATE user_trips SET user_id = ?, in_trip = 1 WHERE id = ?;";      
+                    + "UPDATE user_trips SET user_id = ?, name = ?, in_trip = 1 WHERE id = ?;";      
             userQueryData.push(userData.id);
             if (userData.newUser.hasAccount) {
                 userQueryData.push(results[1][0].user_id);
+                userQueryData.push(results[1][0].username);
             } else {
                 userQueryData.push(null);
+                userQueryData.push(userData.newUser.username);
             }  
             userQueryData.push(results[2][0].id);        
         }
