@@ -91,11 +91,23 @@ function checkUsername(username, callback, error) {
     });
 }
 
+function pushSubscribe(subscriptionObject, callback, error) {
+    let sqlQuery = "INSERT INTO push_subscriptions (user_id, pushSubscription) VALUES (?, ?)";
+    pool.query(sqlQuery, [subscriptionObject.user_id, subscriptionObject.pushSubscription], function (err, result) {
+        if (err) {
+            console.error('error query: ' + err.stack);
+            return error();
+        }
+        return callback();
+    });
+}
+
 module.exports = {
     validateSignin,
     userSignup,
     changeUsername,
     changePassword,
-    checkUsername
+    checkUsername,
+    pushSubscribe
 }
 

@@ -118,4 +118,11 @@ router.post('/checkusername', function (req, res) {
   }, () => errorMessage(res));
 });
 
+router.post('/pushsubscribe', function (req, res) {
+  const subscriptionObject = req.body;
+  db.pushSubscribe(subscriptionObject, () => {
+    return res.json({message: 'success'})
+  }, () => errorMessage(res));
+});
+
 module.exports = router;
