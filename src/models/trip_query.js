@@ -11,7 +11,8 @@ function addTrip(tripData, callback, error) {
             return error();
         }
 
-        return addUsers(tripData.users, tripId, (userid) => { 
+        return addUsers(tripData.users, tripId, (userid) => {
+                userid = userid.filter(user => user !== tripData.user_id); 
                 addCurrency(tripData.currency, tripId, () => callback(tripId, userid), error);
             }, error);
     });

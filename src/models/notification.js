@@ -18,7 +18,7 @@ function pushNotification(userIds, payload) {
             if (result.length !== 0) {
                 webpush.sendNotification(JSON.parse(result[0].pushSubscription), payload);
             }
-        })
+        });
     }
 }
 

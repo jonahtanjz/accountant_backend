@@ -105,8 +105,9 @@ function pushSubscribe(subscriptionObject, callback, error) {
             sqlQueryData.push(subscriptionObject.user_id);
             sqlQueryData.push(JSON.stringify(subscriptionObject.pushSubscription));
         } else {
-            sqlQuery = "UPDATE push_subscriptions SET pushSubscription = ?";
+            sqlQuery = "UPDATE push_subscriptions SET pushSubscription = ? WHERE user_id = ?";
             sqlQueryData.push(JSON.stringify(subscriptionObject.pushSubscription));
+            sqlQueryData.push(subscriptionObject.user_id);
         }
 
         pool.query(sqlQuery, sqlQueryData, function (err, result) {
