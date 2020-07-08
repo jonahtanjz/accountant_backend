@@ -125,4 +125,11 @@ router.post('/pushsubscribe', function (req, res) {
   }, () => errorMessage(res));
 });
 
+router.post('/pushunsubscribe', function (req, res) {
+  const subscriptionObject = req.body;
+  db.pushUnsubscribe(subscriptionObject, () => {
+    return res.json({message: 'success'})
+  }, () => errorMessage(res));
+});
+
 module.exports = router;

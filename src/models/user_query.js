@@ -92,8 +92,36 @@ function checkUsername(username, callback, error) {
 }
 
 function pushSubscribe(subscriptionObject, callback, error) {
-    let sqlQuery = "INSERT INTO push_subscriptions (user_id, pushSubscription) VALUES (?, ?)";
-    pool.query(sqlQuery, [subscriptionObject.user_id, subscriptionObject.pushSubscription], function (err, result) {
+    let sqlQuery = "SELECT user_id FROM push_subscriptions WHERE user_id = ?";
+    pool.query(sqlQuery, [subscriptionObject.user_id], function (err, subscribed) {
+        if (err) {
+            console.error('error query: ' + err.stack);
+            return error();
+        }
+        let sqlQuery;
+        let sqlQueryData = [];
+        if (subscribed.length === 0) {
+            sqlQuery = "INSERT INTO push_subscriptions (user_id, pushSubscription) VALUES (?, ?)";
+            sqlQueryData.push(subscriptionObject.user_id);
+            sqlQueryData.push(JSON.stringify(subscriptionObject.pushSubscription));
+        } else {
+            sqlQuery = "UPDATE push_subscriptions SET pushSubscription = ?";
+            sqlQueryData.push(JSON.stringify(subscriptionObject.pushSubscription));
+        }
+
+        pool.query(sqlQuery, sqlQueryData, function (err, result) {
+            if (err) {
+                console.error('error query: ' + err.stack);
+                return error();
+            }
+            return callback();
+        });
+    });
+}
+
+function pushUnsubscribe(subscriptionObject, callback, error) {
+    let sqlQuery = "DELETE FROM push_subscriptions WHERE user_id = ?";
+    pool.query(sqlQuery, [subscriptionObject.user_id], function (err, result) {
         if (err) {
             console.error('error query: ' + err.stack);
             return error();
@@ -108,6 +136,7 @@ module.exports = {
     changeUsername,
     changePassword,
     checkUsername,
-    pushSubscribe
+    pushSubscribe,
+    pushUnsubscribe
 }
 

@@ -11,8 +11,8 @@ function addTrip(tripData, callback, error) {
             return error();
         }
 
-        return addUsers(tripData.users, tripId, () => { 
-                addCurrency(tripData.currency, tripId, () => callback(tripId), error);
+        return addUsers(tripData.users, tripId, (userid) => { 
+                addCurrency(tripData.currency, tripId, () => callback(tripId, userid), error);
             }, error);
     });
 }
@@ -22,6 +22,7 @@ function addUsers(users, trip_id, callback, error) {
     let sqlTemplate = "INSERT INTO user_trips (user_id, trip_id, name) VALUES (?, ?, ?);";
     let sqlQuery = "";
     let userData = [];
+    let userids = [];
     function synchronousForLoop(i) {
         sqlQuery = sqlQuery + sqlTemplate;
         pool.query("SELECT user_id, username FROM users WHERE username = ?", [users[i].username], function (err, result) {
@@ -37,6 +38,7 @@ function addUsers(users, trip_id, callback, error) {
                 userData.push(result[0].user_id);
                 userData.push(trip_id);
                 userData.push(result[0].username);
+                userids.push(result[0].user_id);
             }
 
             if (i === users.length - 1) {
@@ -45,7 +47,7 @@ function addUsers(users, trip_id, callback, error) {
                         console.error('error query: ' + err.stack);
                         return error();
                     }
-                    return callback();
+                    return callback(userids);
                 });
             } else {
                 return synchronousForLoop(i + 1);

@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('../models/trip_query');
+const wp = require('../models/notification');
 
 const router = express.Router();
 
@@ -13,7 +14,8 @@ const errorMessage = res => {
 // create new trip
 router.post('/newtrip', (req, res) => {
     const tripData = req.body;
-    db.addTrip(tripData, tripID => {
+    db.addTrip(tripData, (tripID, users) => {
+      wp.pushNotification(users, "You have been added to a trip, " + tripData.tripName + ".");
       return res.json({ trip_id: tripID });
     }, () => errorMessage(res));
 });
