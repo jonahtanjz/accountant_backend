@@ -15,7 +15,7 @@ const errorMessage = res => {
 router.post('/newtrip', (req, res) => {
     const tripData = req.body;
     db.addTrip(tripData, (tripID, users) => {
-      wp.pushNotification(users, "You have been added to a trip, " + tripData.tripName + ".");
+      wp.pushNotification(users, "You have been added to the trip, " + tripData.tripName + ".");
       return res.json({ trip_id: tripID });
     }, () => errorMessage(res));
 });
@@ -77,7 +77,8 @@ router.post('/edittrip', function (req, res) {
 // edit user's name in a trip
 router.post('/edittripuser', function (req, res) {
   const userData = req.body;
-  db.editTripUser(userData, () => {
+  db.editTripUser(userData, (user) => {
+    wp.pushNotification(user, "You have been added to a trip.");
     return db.getTripInfo(userData.trip_id, tripData => {
       return res.json({trip: tripData[0], users: tripData[1], currency: tripData[2]});
     }, () => errorMessage(res));
@@ -87,7 +88,8 @@ router.post('/edittripuser', function (req, res) {
 // add one user to trip
 router.post('/adduser', function (req, res) {
   const userData = req.body;
-  db.addNewUser(userData, () => {
+  db.addNewUser(userData, (user) => {
+    wp.pushNotification(user, "You have been added to a trip.");
     return db.getTripInfo(userData.trip_id, tripData => {
       return res.json({trip: tripData[0], users: tripData[1], currency: tripData[2]});
     }, () => errorMessage(res));
@@ -137,7 +139,8 @@ router.post('/removecurrency', function (req, res) {
 // end trip
 router.post('/endtrip', function (req, res) {
     const userData = req.body;
-    db.endTrip(userData, userId => {
+    db.endTrip(userData, (userId, users) => {
+      wp.pushNotification(users, "A trip has ended. Please go to the ledger to view the suggested payments.");
       return db.getTrips(userId, tripsData => {
         return res.json({ trips: tripsData });
       }, () => errorMessage(res));
@@ -196,7 +199,9 @@ router.post('/deletetripall', function (req, res) {
 // make payment from suggested payment
 router.post('/makepayment', function (req, res) {
   const transactionData = req.body;
-  db.addTransaction(transactionData, () => {
+  transactionData.isPayment = true;
+  db.addTransaction(transactionData, (user) => {
+    wp.pushNotification(user.receiving, user.paying + " has made a payment to you as settlement.");
     return db.getLedger(transactionData.trip_id, tripData => {
       return res.json({ trip: tripData[0], users: tripData[1], transactions: tripData[2], currency: tripData[3] });
     }, () => errorMessage(res));

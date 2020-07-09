@@ -72,12 +72,14 @@ function addNewUser(userData, callback, error) {
         } else {
             let sqlQuery = "UPDATE user_trips SET user_id = ?, name = ?, in_trip = 1, deleted = 0 WHERE id = ?";
             let userQueryData = [];
+            let userid = [];
             if (results[1].length === 0 || !userData.user.hasAccount) {
                 userQueryData.push(null);
                 userQueryData.push(userData.user.username);
             } else {
                 userQueryData.push(results[1][0].user_id);
                 userQueryData.push(results[1][0].username);
+                userid.push(results[1][0].user_id);
             }
             userQueryData.push(results[0][0].id);
             pool.query(sqlQuery, userQueryData, function (err, result) {
@@ -85,7 +87,7 @@ function addNewUser(userData, callback, error) {
                     console.error('error query: ' + err.stack);
                     return error();
                 }
-                return callback();
+                return callback(userid);
             });
         }
     });
@@ -332,7 +334,15 @@ function addTransaction(transactionData, callback, error) {
                     console.error('error query: ' + err.stack);
                     return error();
                 }
-                return callback();
+                
+                if (transactionData.isPayment) {
+                    let user_notification = {};
+                    user_notification.receiving = [userId[transactionData.payers[0][0]]];
+                    user_notification.paying = transactionData.payees[0][0];
+                    return callback(user_notification);
+                } else {
+                    return callback();
+                }
             });
         });
     });
@@ -396,6 +406,7 @@ function editTripUser(userData, callback, error) {
 
         let sqlQuery = "";
         let userQueryData = [];
+        let userid= [];
 
         if (results[2].length === 0) {
             sqlQuery = sqlQuery + "UPDATE user_trips SET user_id = ?, name = ? WHERE id = ?;";
@@ -406,6 +417,7 @@ function editTripUser(userData, callback, error) {
             } else {
                 userQueryData.push(results[1][0].user_id);
                 userQueryData.push(results[1][0].username);
+                userid.push(results[1][0].user_id);
             }
             userQueryData.push(userData.id);
         } else {
@@ -415,6 +427,7 @@ function editTripUser(userData, callback, error) {
             if (userData.newUser.hasAccount) {
                 userQueryData.push(results[1][0].user_id);
                 userQueryData.push(results[1][0].username);
+                userid.push(results[1][0].user_id);
             } else {
                 userQueryData.push(null);
                 userQueryData.push(userData.newUser.username);
@@ -448,7 +461,7 @@ function editTripUser(userData, callback, error) {
                 console.error('error query: ' + err.stack);
                 return error();
             } 
-            return callback();
+            return callback(userid);
         });
 
     });
@@ -522,13 +535,15 @@ function removeCurrency(currencyData, callback, error) {
 
 // end a trip
 function endTrip(userData, callback, error) {
-    let sqlQuery = "UPDATE trips SET ended = 1 WHERE trip_id = ?";
-    pool.query(sqlQuery, [userData.trip_id], function (err, result) {
+    let sqlQuery = "UPDATE trips SET ended = 1 WHERE trip_id = ?;"
+            +"SELECT user_id FROM user_trips WHERE trip_id = ?";
+    pool.query(sqlQuery, [userData.trip_id, userData.trip_id], function (err, result) {
         if (err) {
             console.error('error query: ' + err.stack);
             return error();
         }
-        return callback(userData.user_id);
+        let users = result[1].map(user => user.user_id).filter(userid => userid !== null);
+        return callback(userData.user_id, users);
     });
 }
 
