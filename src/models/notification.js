@@ -16,7 +16,11 @@ function pushNotification(userIds, payload) {
                 console.error('error query: ' + err.stack);
             }
             if (result.length !== 0) {
-                webpush.sendNotification(JSON.parse(result[0].pushSubscription), payload);
+                try {
+                    webpush.sendNotification(JSON.parse(result[0].pushSubscription), payload);
+                } catch (err) {
+                    console.error('error query: ' + err.stack);
+                }
             }
         });
     }
