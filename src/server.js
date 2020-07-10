@@ -46,7 +46,7 @@ app.use('/api/trips', trips);
 
 // request handlers
 app.get('/api', (req, res) => {
-    if (!req.user) return res.status(401).json({ success: false, message: 'Invalid user to access it.' });
+    if (!req.user) return res.status(200).json({ success: false, message: 'Invalid user to access it.' });
     res.send('The Accountant Backend API - ' + req.user.name);
 });
 
