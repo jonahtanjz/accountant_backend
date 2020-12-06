@@ -2,11 +2,11 @@ const webpush = require('web-push');
 const pool = require('./db');
 
 let vapidKeys = {
-    publicKey: 'env.notification.publicKey',
-    privateKey: 'env.notification.privateKey'
+    publicKey: process.env.notificationPublicKey,
+    privateKey: process.env.notificationPrivateKey
 }
 
-webpush.setVapidDetails('mailto: env.notification.email', vapidKeys.publicKey, vapidKeys.privateKey);
+webpush.setVapidDetails('mailto: ' + process.env.notificationEmail, vapidKeys.publicKey, vapidKeys.privateKey);
 
 function pushNotification(userIds, payload) {
     for (let i = 0; i < userIds.length; i++) {
