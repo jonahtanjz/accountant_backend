@@ -2,11 +2,11 @@ const webpush = require('web-push');
 const pool = require('./db');
 
 let vapidKeys = {
-    publicKey: 'BEihlKsIj93XnvJwx8kgF13l6ZdNJlAyY0zqGA8Tzzq_iYvy1KccHEZCwUKY6L3BPV7qmOkA_9arNjTD_6xYVlE',
-    privateKey: '2nRtATZMQW2KeE7ksKLKfq77mi67JEgEWqNGBbnPiQM'
+    publicKey: 'env.notification.publicKey',
+    privateKey: 'env.notification.privateKey'
 }
 
-webpush.setVapidDetails('mailto: tanjz1999@gmail.com', vapidKeys.publicKey, vapidKeys.privateKey);
+webpush.setVapidDetails('mailto: env.notification.email', vapidKeys.publicKey, vapidKeys.privateKey);
 
 function pushNotification(userIds, payload) {
     for (let i = 0; i < userIds.length; i++) {
